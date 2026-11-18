@@ -1,0 +1,694 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>DCMC &amp; DCOE Plate Maps (Copy)</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: bench sheet (same template as the AK5 × cisplatin map) — header strip with toggles, plate + well inspector, IC50 inputs, schedule (SF-268), dose ladder, medium grid, spike map (SF-268), stock cards, notes */
+:root{
+  --bg:#f4f6f8; --panel:#ffffff; --ink:#18212b; --muted:#5c6773; --line:#d5dbe1;
+  --dcmc:#c26a12; --dcmc-soft:#fbe7d1; --dcoe:#4f7a14; --dcoe-soft:#e3efcf; --cis:#1f6fa8; --cis-soft:#d7e8f6;
+  --tmz:#a3366b; --tmz-soft:#f6dbe8;
+  --combo:#e7e1f6; --ctrl:#d9efe1; --veh:#d6eeee; --blank:#e6e8eb; --pos:#f8dada; --pbs:#ffffff;
+  --warn:#9a5b00; --warn-soft:#fff3d6;
+  --sel:#18212b;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12171d; --panel:#1a2129; --ink:#e7edf3; --muted:#9aa6b2; --line:#2d3743;
+  --dcmc:#f0a04b; --dcmc-soft:#4a3218; --dcoe:#a6d067; --dcoe-soft:#2a3a17; --cis:#6cb4ea; --cis-soft:#1b3446;
+  --tmz:#f08bbd; --tmz-soft:#45202f;
+  --combo:#332c4a; --ctrl:#1f3a2b; --veh:#1c3b3b; --blank:#2a3038; --pos:#4a2626; --pbs:#161c22;
+  --warn:#f2c46b; --warn-soft:#3a2e14; --sel:#e7edf3; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12171d; --panel:#1a2129; --ink:#e7edf3; --muted:#9aa6b2; --line:#2d3743;
+  --dcmc:#f0a04b; --dcmc-soft:#4a3218; --dcoe:#a6d067; --dcoe-soft:#2a3a17; --cis:#6cb4ea; --cis-soft:#1b3446;
+  --tmz:#f08bbd; --tmz-soft:#45202f;
+  --combo:#332c4a; --ctrl:#1f3a2b; --veh:#1c3b3b; --blank:#2a3038; --pos:#4a2626; --pbs:#161c22;
+  --warn:#f2c46b; --warn-soft:#3a2e14; --sel:#e7edf3; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+header{display:flex;flex-wrap:wrap;gap:12px 28px;align-items:flex-end;justify-content:space-between}
+h1{font-size:26px;line-height:1.15;margin:0;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
+.sub{color:var(--muted);margin:4px 0 0;max-width:68ch}
+.controls{display:flex;flex-wrap:wrap;gap:10px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel)}
+.seg button{font:500 13px var(--sans);color:var(--muted);background:transparent;border:0;padding:8px 14px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.seg button:focus-visible,.well:focus-visible,.ic input:focus-visible,.reset:focus-visible{outline:2px solid var(--cis);outline-offset:2px}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;align-items:start}
+@media (max-width:900px){.main{grid-template-columns:minmax(0,1fr)}}
+.plate-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;min-width:0}
+.plate-scroll{overflow-x:auto}
+.plate{display:grid;grid-template-columns:22px repeat(12,minmax(44px,1fr));gap:5px;min-width:620px}
+.lab{font:600 12px var(--mono);color:var(--muted);display:flex;align-items:center;justify-content:center}
+.well{aspect-ratio:1;border-radius:50%;border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font:500 10px/1.12 var(--mono);cursor:pointer;background:var(--pbs);color:var(--ink);padding:0;font-variant-numeric:tabular-nums}
+.well .a{font-weight:600}.well .a.DCMC{color:var(--dcmc)}.well .a.DCOE{color:var(--dcoe)}
+.well .a.CIS,.well .c{color:var(--cis);font-weight:600}
+.well .a.TMZA,.well .a.TMZB,.well .t{color:var(--tmz);font-weight:600}
+.well .m{color:var(--ink);font-weight:600}.well .v{color:var(--muted);font-weight:600}.well .tag{font-size:9px;color:var(--muted)}
+.medgrid td.hl{font-weight:600}
+.medgrid thead th{text-transform:none;letter-spacing:0;font-size:12.5px}
+.well.pbs{color:var(--muted);font-size:9px;cursor:default}
+.well.sel{box-shadow:0 0 0 2.5px var(--sel)}
+.well.diag{border:2px dashed var(--ink)}
+.well.rep{outline:2px dotted var(--tmz);outline-offset:-5px}
+.t-combo{background:var(--combo)}.t-DCMC{background:var(--dcmc-soft)}.t-DCOE{background:var(--dcoe-soft)}.t-CIS{background:var(--cis-soft)}
+.t-TMZA,.t-TMZB{background:var(--tmz-soft)}
+.t-ctrl{background:var(--ctrl)}.t-veh{background:var(--veh)}.t-blank{background:var(--blank)}.t-pos{background:var(--pos)}
+.axis{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:12px;font-size:12.5px;color:var(--muted)}
+.key{display:inline-flex;align-items:center;gap:6px}
+.dot{width:12px;height:12px;border-radius:50%;border:1px solid var(--line);display:inline-block}
+.dash{width:12px;height:12px;border-radius:50%;border:2px dashed var(--ink);display:inline-block}
+.dotted{width:12px;height:12px;border-radius:50%;border:2px dotted var(--tmz);display:inline-block}
+.insp{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.insp h2{margin:0;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.insp .wid{font:600 30px var(--mono);line-height:1}
+.insp .what{color:var(--muted);font-size:14px}
+.kv{display:grid;grid-template-columns:1fr auto;gap:6px 12px;font-size:14px}
+.kv dt{color:var(--muted)}.kv dd{margin:0;font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+.kv .tot{border-top:1px solid var(--line);padding-top:6px;font-weight:600}
+section h3{font-size:17px;margin:0 0 10px}
+.tblwrap{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:14px}
+table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+th,td{padding:9px 12px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+thead th{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);font-weight:600}
+tbody tr:last-child td{border-bottom:0}
+td.mono{font-family:var(--mono)}
+table.sched td{white-space:normal;text-align:left;vertical-align:top}
+table.sched td:first-child{white-space:nowrap;font-family:var(--mono);font-weight:600}
+table.sched thead th{text-align:left}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}
+.card .k{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+.card .v{font:600 22px var(--mono);margin:2px 0 8px}
+.card.DCMC .v{color:var(--dcmc)}.card.DCOE .v{color:var(--dcoe)}.card.CIS .v{color:var(--cis)}.card.TMZ .v{color:var(--tmz)}
+.card p{margin:0;font-size:14px;color:var(--ink)}
+.card p+p{margin-top:6px}
+.notes{font-size:14px;color:var(--ink);max-width:80ch;display:flex;flex-direction:column;gap:6px}
+.notes p{margin:0}
+.notes p.warn{background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:8px 10px}
+.muted{color:var(--muted)}
+.ics{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.ic{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.ic label{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+.ic .row{display:flex;align-items:baseline;gap:8px}
+.ic input{font:600 20px var(--mono);width:7.5ch;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+.ic .u{font:500 13px var(--mono);color:var(--muted)}
+.ic .src{font-size:13px;color:var(--muted)}
+.chip{display:inline-block;font:600 11px var(--sans);letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:99px;background:var(--blank);color:var(--muted)}
+.chip.edited{background:var(--ctrl);color:var(--ink)}
+.chip.est{background:var(--warn-soft);color:var(--warn)}
+.ichead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px}
+.reset{font:500 13px var(--sans);background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer}
+@media (prefers-reduced-motion:no-preference){.well{transition:box-shadow .12s}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1 id="h1">DCMC × Cisplatin Plate Map</h1>
+      <p class="sub" id="sub"></p>
+    </div>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Plate">
+        <button id="b-cyto" aria-pressed="false">Cytotoxicity</button>
+        <button id="b-combo" aria-pressed="true">Combination</button>
+      </div>
+      <div class="seg" role="group" aria-label="Cell line">
+        <button id="b-mda" aria-pressed="true">MDA-MB-231</button>
+        <button id="b-a431" aria-pressed="false">A431</button>
+        <button id="b-sf" aria-pressed="false">SF-268</button>
+      </div>
+      <div class="seg" role="group" aria-label="Agent" id="seg-agent">
+        <button id="b-dcmc" aria-pressed="true">DCMC</button>
+        <button id="b-dcoe" aria-pressed="false">DCOE</button>
+      </div>
+      <div class="seg" role="group" aria-label="TMZ protocol" id="seg-prot" hidden>
+        <button id="b-pa" aria-pressed="true">TMZ ×1 (0 h)</button>
+        <button id="b-pb" aria-pressed="false">TMZ ×3 (0, 24, 48 h)</button>
+      </div>
+      <div class="seg" role="group" aria-label="Show">
+        <button id="b-ul" aria-pressed="true">Volumes µL</button>
+        <button id="b-um" aria-pressed="false">Final conc.</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="plate-card">
+      <div class="plate-scroll"><div class="plate" id="plate" aria-label="96-well plate"></div></div>
+      <div class="axis" id="axis"></div>
+    </div>
+    <aside class="insp" aria-live="polite">
+      <h2>Selected well</h2>
+      <div class="wid" id="i-id"></div>
+      <div class="what" id="i-what"></div>
+      <dl class="kv" id="i-kv"></dl>
+    </aside>
+  </div>
+
+  <section>
+    <div class="ichead">
+      <h3 id="ic-title">IC50s used to centre the grid</h3>
+      <button class="reset" id="ic-reset">Reset to estimates</button>
+    </div>
+    <div class="ics" id="ics"></div>
+    <p class="muted" style="font-size:13.5px;margin:8px 0 0" id="ic-note"></p>
+  </section>
+
+  <section id="sec-sched" hidden>
+    <h3>Dosing schedule (SF-268, both TMZ protocols)</h3>
+    <div class="tblwrap"><table class="sched" id="sched"></table></div>
+  </section>
+
+  <section>
+    <h3>Dose ladder</h3>
+    <div class="tblwrap"><table id="ladder"></table></div>
+    <p class="muted" style="font-size:13.5px;margin:8px 0 0" id="ladnote"></p>
+  </section>
+
+  <section>
+    <h3>Medium per well (µL, added at 0 h)</h3>
+    <div class="tblwrap"><table id="medgrid" class="medgrid"></table></div>
+    <p class="muted" style="font-size:13.5px;margin:8px 0 0" id="mednote"></p>
+  </section>
+
+  <section id="sec-spike" hidden>
+    <h3>Spike map (10 µL per well at 24 h and again at 48 h)</h3>
+    <div class="tblwrap"><table id="spikegrid" class="medgrid"></table></div>
+    <p class="muted" style="font-size:13.5px;margin:8px 0 0" id="spikenote"></p>
+  </section>
+
+  <section>
+    <h3>Stocks</h3>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <section>
+    <h3>Notes</h3>
+    <div class="notes" id="notes"></div>
+  </section>
+</div>
+
+<script>
+const VOL=[0,2,4,8,16,32,64];
+const ROWS='ABCDEFGH';
+const MW=222.37;                       // β-2-himachalen-6-ol, C15H26O
+const TMZ_MW=194.15, TMZ_MASTER=100000; // µM (100 mM in DMSO)
+const PUR={DCMC:0.92,DCOE:0.62};       // active DCMC fraction of weighed material
+const AGN={DCMC:'DCMC',DCOE:'DCOE',CIS:'Cisplatin',TMZA:'TMZ, single dose',TMZB:'TMZ, three doses'};
+const DEF={
+  MDA:{DCMC:6.4,DCOE:9.5,CIS:19.59},
+  A431:{DCMC:6.4,DCOE:9.5,CIS:10},
+  SF268:{DCMC:4.3,TMZA:300,TMZB:150}
+};
+const SRC={
+  MDA:{DCMC:['paper','Taleb 2016: 6 µg/mL at 98% purity = 5.9 µg/mL active, so 6.4 µg/mL of your 92% material'],
+       DCOE:['inferred','5.9 µg/mL active ÷ 0.62 DCMC content; fits the 7–25 µg/mL reported for the DCMC-rich F2 fraction'],
+       CIS:['your data','Your earlier CompuSyn Dm for MDA-MB-231']},
+  A431:{DCMC:['estimate','No A431 data. Median of the five lines in Taleb 2016 (4–13 µg/mL)'],
+        DCOE:['estimate','DCMC estimate ÷ 0.62 DCMC content'],
+        CIS:['placeholder','No matched continuous-exposure value. Replace with your cytotoxicity result']},
+  SF268:{DCMC:['paper','Taleb 2016: 4 µg/mL at 98% purity = 3.9 µg/mL active, so 4.3 µg/mL of your 92% material (24 h value)'],
+         TMZA:['estimate','147 µM was measured in a 6-day SRB assay (PLOS One 2015; SF-268 has high MGMT). A single dose read at 72 h should need about twice that'],
+         TMZB:['estimate','Per-dose estimate: half the single-dose value, since cells get three pulses. Replace with your result']}
+};
+const LINES={
+  MDA:{name:'MDA-MB-231',cells:5000,density:'1.0 × 10⁵ cells/mL',total:'1.1 × 10⁶',h:48},
+  A431:{name:'A431',cells:5000,density:'1.0 × 10⁵ cells/mL',total:'1.1 × 10⁶',h:48},
+  SF268:{name:'SF-268',cells:3000,density:'6.0 × 10⁴ cells/mL',total:'6.6 × 10⁵',h:72}
+};
+const CY={DCMC:{L1:0.25,u:'µg/mL',hi:400,mUL:20},DCOE:{L1:0.5,u:'µg/mL',hi:800,mUL:40},CIS:{L1:0.5,u:'µM',hi:800,mUL:400},
+          TMZA:{L1:4,u:'µM',hi:6400,mUL:64},TMZB:{L1:2,u:'µM',hi:3200,mUL:32}};
+const CYROW={B:'DCMC',C:'DCMC',D:'DCOE',E:'DCOE',F:'CIS',G:'CIS'};
+const CYROW_SF={B:'DCMC',C:'DCMC',D:'TMZA',E:'TMZA',F:'TMZB',G:'TMZB'};
+const NICE=[];[0.01,0.1,1,10,100,1000].forEach(d=>[1,1.25,1.5,2,2.5,3,4,5,6,7.5,8].forEach(b=>NICE.push(+(b*d).toPrecision(3))));
+
+let plate='combo', line='MDA', agent='DCMC', prot='A', mode='ul', sel='E6';
+let IC=JSON.parse(JSON.stringify(DEF));
+try{const s=JSON.parse(localStorage.getItem('dcmc-ic50')||'null');if(s)for(const k in DEF)if(s[k])IC[k]={...DEF[k],...s[k]}}catch(e){}
+function saveIC(){try{localStorage.setItem('dcmc-ic50',JSON.stringify(IC))}catch(e){}}
+
+const isSF=()=>line==='SF268';
+const SER=()=>plate==='cyto'&&line==='MDA';   // MDA-MB-231 cytotoxicity: serial dilution of the high stock, 16 µL per well
+const AG=()=>isSF()?'DCMC':agent;                       // agent on the combination plate
+const PK=()=>isSF()?(prot==='A'?'TMZA':'TMZB'):'CIS';   // partner IC50 key
+const PN=()=>isSF()?'TMZ':'cisplatin';
+const PU=()=>'µM';
+/* Volumes: cells always 50 µL. SF-268 gets 130 µL at 0 h (180 µL) + 2 × 10 µL spikes = 200 µL; other lines 150 µL at 0 h = 200 µL */
+const V0=()=>isSF()?130:150;            // medium + stocks added at 0 h
+const VW=()=>V0()+50;                   // well volume after the 0 h addition
+const FAC=()=>VW()/2;                   // working stock = FAC × lowest dose (2 µL gives level 1)
+const SF1=()=>VW()/10+1, SF2=()=>VW()/10+2; // spike strength at 24 h and 48 h
+const VEND=200;
+const MASTER={DCMC:20000,DCOE:20000,CIS:2000,TMZA:TMZ_MASTER,TMZB:TMZ_MASTER};
+function cyHi(ag){return dose(CY[ag].L1,8)*VW()/16}
+function cyM(ag){return cyHi(ag)*1000/MASTER[ag]}   // µL master per 1 mL high stock
+const LET={DCMC:'D',DCOE:'O'};
+function nice(x){let b=NICE[0];for(const n of NICE){if(Math.abs(Math.log(n/x))<Math.abs(Math.log(b/x)))b=n}return b}
+function fmt(x){if(x===0)return '0';const s=x>=100?x.toFixed(0):x>=10?x.toFixed(1):x>=1?x.toFixed(2):x.toFixed(3);return s.indexOf('.')>=0?s.replace(/\.?0+$/,''):s}
+function dose(L,l){return l?L*Math.pow(2,l-1):0}
+function activeUM(ag,ugml){return ugml*PUR[ag]/MW*1000}
+function P(){
+  const Lag=nice(IC[line][AG()]/8);
+  const Lc=isSF()?nice(IC[line][PK()]/32):nice(IC[line].CIS/8);
+  const F=FAC();
+  return {Lag,Lc,F,dmsoG8:0.16*Lag,salG8:1.6*Lc,agMaster:0.2*F*Lag,cisMaster:2*F*Lc,tmzMaster:0.04*F*Lc}
+}
+/* TMZ spike tube for the top level: total volume T, factor f (21 at 24 h, 22 at 48 h) */
+function spikeTop(top,f,T){const c=f*top, m=T*c/TMZ_MASTER;return {c,m,med:T-m,pct:100*m/T}}
+
+/* ---------- well definitions ---------- */
+const CTRL={t:'ctrl',med:150,cells:true};
+const BLANK={t:'blank',med:200,cells:false};
+function comboWell(r,c){
+  const CTRL={t:'ctrl',med:V0(),cells:true};
+  const p=P(), ag=AG(), pk=isSF()?PK():'CIS';
+  if(r==='H'){ if(c>=2&&c<=8) return {...BLANK,sp:'M'}; if(c>=9&&c<=11) return {...CTRL,edge:true,sp:'M'}; return {t:'pbs'}; }
+  if(r==='A'||c===1||c===12) return {t:'pbs'};
+  const lv=ROWS.indexOf(r);
+  const rep=isSF()&&prot==='B';
+  const mk=(t,ai,ci)=>({t,ai,ci,aV:VOL[ai],cV:VOL[ci],aU:dose(p.Lag,ai),cU:dose(p.Lc,ci),med:V0()-VOL[ai]-VOL[ci],cells:true,
+    sp:rep&&ci?'T'+ci:'M',rep:rep&&ci>0});
+  if(c===2) return mk(ag,lv,0);
+  if(c>=3&&c<=8) return mk('combo',lv,c-2);
+  if(c===9) return mk(pk,0,lv);
+  if(c===10||(c===11&&r==='B')) return {t:'veh',med:V0()-128,veh:128,cells:true,sp:rep?'V':'M'};
+  return {...CTRL,sp:'M'};
+}
+function cytoWell(r,c){
+  const CTRL={t:'ctrl',med:V0(),cells:true};
+  if(r==='H'){ if(SER()) return {t:'pbs'}; if(c>=2&&c<=8) return {...BLANK,sp:'M'}; if(c>=9&&c<=11) return {...CTRL,edge:true,sp:'M'}; return {t:'pbs'}; }
+  if(r==='A'||c===1||c===12) return {t:'pbs'};
+  const ag=(isSF()?CYROW_SF:CYROW)[r];
+  if(c===2){
+    if(SER()){
+      if(r==='B'||r==='C') return {t:'pos',med:V0()-16,posV:16,cells:true,sp:'M'};   // positive control: 16 µL of the 2 mM cisplatin master
+      if(r==='F'||r==='G') return {...BLANK,sp:'M'};                                // blank: no cells
+    }
+    return {...CTRL,sp:'M'};
+  }
+  if(c===3) return {t:'veh',ag,vV:16,med:V0()-16,cells:true,sp:ag==='TMZB'?'V':'M'};
+  const lv=c-3, ser=SER(), st=ser?'S'+lv:(lv<=4?'Lo':'Hi'), v=ser?16:2*Math.pow(2,(lv-1)%4);
+  return {t:ag,ag,lv,st,v,ser,u:dose(CY[ag].L1,lv),med:V0()-v,cells:true,sp:ag==='TMZB'?'T'+lv:'M',rep:ag==='TMZB'};
+}
+function well(r,c){return plate==='combo'?comboWell(r,c):cytoWell(r,c)}
+
+const NAMES={combo:()=>`${AG()} + ${PN()}`,DCMC:()=>'DCMC alone',DCOE:()=>'DCOE alone',CIS:()=>'Cisplatin alone',
+  TMZA:()=>'TMZ alone, single dose',TMZB:()=>'TMZ alone, three doses',
+  ctrl:()=>'Untreated (cells + medium)',veh:()=>'Vehicle control',blank:()=>'Blank (medium only, no cells)',pos:()=>'Positive control (cisplatin master)',pbs:()=>'Edge well'};
+
+/* ---------- render ---------- */
+function render(){
+  const L=LINES[line];
+  document.getElementById('seg-agent').hidden=plate!=='combo'||isSF();
+  document.getElementById('seg-prot').hidden=plate!=='combo'||!isSF();
+  document.getElementById('sec-sched').hidden=!isSF();
+  document.getElementById('sec-spike').hidden=!isSF();
+  const protTxt=prot==='A'?'TMZ once at 0 h':'TMZ at 0, 24 and 48 h';
+  document.getElementById('h1').textContent=plate==='combo'
+    ?(isSF()?`DCMC × Temozolomide Plate Map`:`${agent} × Cisplatin Plate Map`)
+    :(isSF()?'DCMC & Temozolomide Cytotoxicity Plate':'DCMC, DCOE & Cisplatin Cytotoxicity Plate');
+  const seed=`${L.name} · ${L.cells.toLocaleString()} cells/well in 50 µL, then ${V0()} µL medium + drug stocks next day`;
+  document.getElementById('sub').textContent=isSF()
+    ?(plate==='combo'
+      ?`${seed} (0 h, 180 µL) · ${protTxt} · 10 µL spike to every well at 24 h and 48 h · 200 µL final · read at 72 h · 6 × 6 combinations + single agents · run 3 plates per protocol`
+      :`${seed} (0 h, 180 µL) · 10 µL spike to every well at 24 h and 48 h · 200 µL final · read at 72 h · DCMC, TMZ ×1 and TMZ ×3, 8 doses each in duplicate rows · run 3 plates`)
+    :(plate==='combo'
+      ?`${seed} · 200 µL final · 48 h · 6 × 6 combinations + single agents, all inside the edge · run 3 plates`
+      :`${seed} · 200 µL final · 48 h · 8 doses (128-fold) per agent in duplicate rows${SER()?' · 2-fold serial dilution, 16 µL per well':''} · run 3 plates, before the combination plates`);
+  axis();
+  const pl=document.getElementById('plate'); pl.innerHTML='';
+  pl.appendChild(Object.assign(document.createElement('div'),{className:'lab'}));
+  for(let c=1;c<=12;c++){const d=document.createElement('div');d.className='lab';d.textContent=c;pl.appendChild(d)}
+  for(const r of ROWS){
+    const lb=document.createElement('div');lb.className='lab';lb.textContent=r;pl.appendChild(lb);
+    for(let c=1;c<=12;c++){
+      const w=well(r,c), id=r+c, b=document.createElement('button');
+      b.className='well t-'+w.t+(w.t==='pbs'?' pbs':'')+(id===sel?' sel':'')+(w.rep?' rep':'');
+      if(plate==='combo'&&w.t==='combo'&&w.ai===w.ci) b.classList.add('diag');
+      b.setAttribute('aria-label',id+' '+NAMES[w.t]());
+      b.innerHTML=wellText(w);
+      if(w.t==='pbs') b.tabIndex=-1; else b.addEventListener('click',()=>{sel=id;render()});
+      pl.appendChild(b);
+    }
+  }
+  inspect();ladder();medgrid();spikegrid();sched();cards();notes();icNote();
+}
+function wellText(w){
+  if(w.t==='pbs') return mode==='ul'?'<span>PBS</span><span>200</span>':'PBS';
+  const tag={blank:'Blank',veh:'Veh',ctrl:'Untr',pos:'Pos'}[w.t];
+  const pc=isSF()?'t':'c', pl=isSF()?'T':'C';
+  if(plate==='combo'){
+    const ag=AG();
+    if(mode==='ul') return (tag?`<span class="tag">${tag}</span>`:'')+(w.aV?`<span class="a ${ag}">${LET[ag]} ${w.aV}</span>`:'')+(w.cV?`<span class="${pc}">${pl} ${w.cV}</span>`:'')+(w.veh?`<span class="v">V ${w.veh}</span>`:'')+`<span class="m">M ${w.t==='blank'?V0():w.med}</span>`;
+    if(tag) return tag;
+    return (w.aV?`<span class="a ${ag}">${fmt(w.aU)}</span>`:'')+(w.cV?`<span class="${pc}">${fmt(w.cU)}</span>`:'');
+  }
+  if(mode==='ul'){
+    if(w.t==='veh') return `<span class="tag">Veh</span><span class="a ${w.ag}">V 16</span><span class="m">M ${V0()-16}</span>`;
+    if(w.t==='pos') return `<span class="tag">Pos</span><span class="a CIS">C 16</span><span class="m">M ${w.med}</span>`;
+    if(tag) return `<span class="tag">${tag}</span><span class="m">M ${V0()}</span>`;
+    return `<span class="a ${w.ag}">${w.st} ${w.v}</span><span class="m">M ${w.med}</span>`;
+  }
+  if(tag) return tag;
+  return `<span class="a ${w.ag}">${fmt(w.u)}</span>`;
+}
+function axis(){
+  const p=P(), ax=document.getElementById('axis');
+  const k=(cls,txt)=>`<span class="key"><span class="dot" style="background:var(--${cls})"></span>${txt}</span>`;
+  const common=k('ctrl','Untreated')+k('veh','Vehicle')+k('blank','Blank (no cells)')+(SER()?k('pos','Positive (cisplatin master)'):'');
+  const rep=`<span class="key"><span class="dotted"></span>Gets TMZ again at 24 h and 48 h</span>`;
+  if(plate==='combo'){
+    const ag=AG(), soft=ag==='DCMC'?'dcmc-soft':'dcoe-soft';
+    const ps=isSF()?'tmz-soft':'cis-soft', pc=isSF()?'tmz':'cis', pl=isSF()?'T':'C';
+    ax.innerHTML=k('combo','Combination')+k(soft,`${ag} alone (column 2)`)+k(ps,`${isSF()?'TMZ':'Cisplatin'} alone (column 9)`)+common+
+      `<span class="key"><span class="dash"></span>${isSF()?'Constant ratio':'IC50-matched ratio'} ${fmt(p.Lag)} µg/mL : ${fmt(p.Lc)} µM (diagonal)</span>`+
+      (isSF()&&prot==='B'?rep:'')+
+      `<span class="key"><b style="color:var(--${ag.toLowerCase()})">${LET[ag]}</b>&nbsp;=&nbsp;${ag} stock &nbsp;<b style="color:var(--${pc})">${pl}</b>&nbsp;=&nbsp;${PN()} stock &nbsp;<b>M</b>&nbsp;=&nbsp;medium &nbsp;<b style="color:var(--muted)">V</b>&nbsp;=&nbsp;vehicle medium (µL, at 0 h)</span>`+
+      (mode==='um'?`<span class="key">Final conc.: ${ag} in µg/mL, ${PN()} in µM${isSF()?' per dose':''}</span>`:'');
+  }else if(isSF()){
+    ax.innerHTML=k('dcmc-soft','DCMC (rows B–C)')+k('tmz-soft','TMZ ×1 (rows D–E), TMZ ×3 (rows F–G)')+common+rep+
+      `<span class="key"><b>Lo / Hi</b>&nbsp;=&nbsp;low or high stock, µL &nbsp;<b>V</b>&nbsp;=&nbsp;row-matched vehicle stock &nbsp;<b>M</b>&nbsp;=&nbsp;medium</span>`+
+      (mode==='um'?`<span class="key">Final conc.: DCMC in µg/mL, TMZ in µM per dose</span>`:'');
+  }else{
+    ax.innerHTML=k('dcmc-soft','DCMC (rows B–C)')+k('dcoe-soft','DCOE (rows D–E)')+k('cis-soft','Cisplatin (rows F–G)')+common+
+      (SER()?`<span class="key"><b>S1–S8</b>&nbsp;=&nbsp;serial dilution tube, µL added per well &nbsp;<b>V</b>&nbsp;=&nbsp;row-matched vehicle stock &nbsp;<b>M</b>&nbsp;=&nbsp;medium</span>`:`<span class="key"><b>Lo / Hi</b>&nbsp;=&nbsp;low or high stock, µL &nbsp;<b>V</b>&nbsp;=&nbsp;row-matched vehicle stock &nbsp;<b>M</b>&nbsp;=&nbsp;medium</span>`)+
+      (mode==='um'?`<span class="key">Final conc.: DCMC and DCOE in µg/mL, cisplatin in µM</span>`:'');
+  }
+}
+function spikeLabel(sp){if(!sp)return null;if(sp==='M')return '10 µL medium';if(sp==='V')return '10 µL vehicle spike';return `10 µL TMZ spike, level ${sp.slice(1)}`}
+function inspect(){
+  const r=sel[0], c=+sel.slice(1), w=well(r,c), p=P(), rows=[];
+  document.getElementById('i-id').textContent=sel;
+  let what=NAMES[w.t]();
+  const tot='200 µL';
+  if(plate==='combo'){
+    const ag=AG(), pk=isSF()?PK():'CIS';
+    if(w.t==='combo'){const ratio=(w.aU/w.cU)/(p.Lag/p.Lc);what+=` · ${ratio===1?(isSF()?'on the constant-ratio diagonal':'IC50-matched ratio'):ratio>1?fmt(ratio)+'× '+ag+'-heavy':fmt(1/ratio)+'× '+PN()+'-heavy'}`}
+    document.getElementById('i-what').textContent=what;
+    if(w.t!=='blank'){
+      rows.push([`${ag} final`,fmt(w.aU||0)+' µg/mL']);
+      if(w.aU){rows.push(['as active DCMC',fmt(w.aU*PUR[ag])+' µg/mL'],['active DCMC',fmt(activeUM(ag,w.aU))+' µM'],[`× ${ag} IC50`,fmt(w.aU/IC[line][ag])+'×'])}
+      rows.push([`${isSF()?'TMZ per dose':'Cisplatin final'}`,fmt(w.cU||0)+' µM']);
+      if(w.cU) rows.push([`× ${PN()} IC50`,fmt(w.cU/IC[line][pk])+'×']);
+      if(isSF()&&w.cU) rows.push(['TMZ doses',prot==='A'?'0 h':'0, 24, 48 h']);
+    }
+    rows.push(['Cells (day 0)',w.cells?'50 µL':'50 µL medium'],[`${ag} stock`,(w.aV||0)+' µL'],[`${isSF()?'TMZ':'Cisplatin'} stock`,(w.cV||0)+' µL']);
+    if(w.veh) rows.push(['Vehicle medium',w.veh+' µL']);
+    rows.push(['Medium (0 h)',w.t==='blank'?V0()+' µL':w.med+' µL']);
+  }else{
+    if(w.lv) what+=` · level ${w.lv}`;
+    if(w.t==='veh') what+=` · matched to ${AGN[w.ag]} top dose`;
+    document.getElementById('i-what').textContent=what;
+    if(w.lv){
+      rows.push([`${w.ag==='TMZB'?'TMZ per dose':AGN[w.ag]+' final'}`,fmt(w.u)+' '+CY[w.ag].u]);
+      if(w.ag==='DCMC'||w.ag==='DCOE') rows.push(['active DCMC',fmt(activeUM(w.ag,w.u))+' µM']);
+      rows.push([`× est. IC50`,fmt(w.u/IC[line][w.ag])+'×'],['Cells (day 0)','50 µL']);
+      if(w.ser) rows.push(['Serial tube S'+w.lv,fmt(CY[w.ag].hi/Math.pow(2,8-w.lv))+' '+CY[w.ag].u],['Added from tube',w.v+' µL']); else rows.push([`${w.st} stock`,w.v+' µL']);
+    }else if(w.t==='veh'){rows.push(['Cells (day 0)','50 µL'],['Vehicle stock','16 µL'])}
+    else if(w.t==='pos'){rows.push(['Cisplatin final',fmt(2000*16/200)+' µM'],['× est. IC50',fmt(2000*16/200/IC[line].CIS)+'×'],['Cells (day 0)','50 µL'],['Cisplatin master (2 mM)','16 µL'],['Saline in well','8% v/v'])}
+    else rows.push(['Cells (day 0)',w.cells?'50 µL':'50 µL medium']);
+    rows.push(['Medium (0 h)',w.t==='blank'?V0()+' µL':w.med+' µL']);
+  }
+  if(isSF()){const s=spikeLabel(w.sp);rows.push(['Spike at 24 h',s],['Spike at 48 h',s])}
+  rows.push(['Total',tot]);
+  document.getElementById('i-kv').innerHTML=rows.map((x,i)=>`<dt${i===rows.length-1?' class="tot"':''}>${x[0]}</dt><dd${i===rows.length-1?' class="tot"':''}>${x[1]}</dd>`).join('');
+}
+function table(id,head,rows){
+  document.getElementById(id).innerHTML=`<thead><tr>${head.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>`+
+    rows.map(r=>`<tr>${r.map((x,i)=>`<td${i?' class="mono"':''}>${x}</td>`).join('')}</tr>`).join('')+'</tbody>';
+}
+function ladder(){
+  const p=P();
+  if(plate==='combo'){
+    const lv=[0,1,2,3,4,5,6], ag=AG(), pk=isSF()?PK():'CIS';
+    const rows=[
+      ['Stock added (µL)',...VOL],
+      [`${ag} (µg/mL)`,...lv.map(i=>fmt(dose(p.Lag,i)))],
+      ['→ active DCMC (µM)',...lv.map(i=>fmt(activeUM(ag,dose(p.Lag,i))))],
+      [`× ${ag} IC50`,...lv.map(i=>i?fmt(dose(p.Lag,i)/IC[line][ag])+'×':'–')],
+      [isSF()?'TMZ per dose (µM)':'Cisplatin (µM)',...lv.map(i=>fmt(dose(p.Lc,i)))],
+      [`× ${PN()} IC50`,...lv.map(i=>i?fmt(dose(p.Lc,i)/IC[line][pk])+'×':'–')]];
+    if(isSF()&&prot==='B') rows.push([`TMZ spike, 24 h (µM, ${SF1()}×)`,...lv.map(i=>i?fmt(SF1()*dose(p.Lc,i)):'–')],[`TMZ spike, 48 h (µM, ${SF2()}×)`,...lv.map(i=>i?fmt(SF2()*dose(p.Lc,i)):'–')]);
+    table('ladder',['Level',...lv],rows);
+    document.getElementById('ladnote').textContent=isSF()
+      ?`Rows B–G are dose levels 1–6. Combinations (columns 3–8): DCMC level = row, TMZ level = column − 2. Single agents: DCMC alone in column 2 and TMZ alone in column 9, each at its row's level. DCMC's lowest dose is its IC50 ÷ 8 (${fmt(IC[line].DCMC)} → ${fmt(p.Lag)} µg/mL), so level 4 sits near its IC50. TMZ's lowest dose is its IC50 ÷ 32 (${fmt(IC[line][pk])} → ${fmt(p.Lc)} µM), so level 6 sits near its IC50 and the lower levels cover clinically reachable concentrations. Both working stocks are 90× the lowest dose, because 2 µL goes into 180 µL at 0 h. DCMC is added once in both protocols. Concentrations are at the time of addition; DCMC ends at 0.9× nominal after the two 10 µL spikes.`
+      :`Rows B–G are dose levels 1–6. Combinations (columns 3–8): ${ag} level = row, cisplatin level = column − 2. Single agents: ${ag} alone in column 2 and cisplatin alone in column 9, each at its row's level. Both stocks are 100× the lowest dose, so the volumes are identical for the two drugs. Lowest doses are IC50 ÷ 8 rounded to a pipettable value (${ag} ${fmt(IC[line][ag])} µg/mL → ${fmt(p.Lag)}; cisplatin ${fmt(IC[line].CIS)} µM → ${fmt(p.Lc)}), so level 4 sits near each IC50.`;
+  }else{
+    const lv=[1,2,3,4,5,6,7,8];
+    const st=['Stock · µL',...lv.map(i=>(i<=4?'Lo ':'Hi ')+2*Math.pow(2,(i-1)%4))];
+    const rows=isSF()?[st,
+      ['DCMC (µg/mL)',...lv.map(i=>fmt(dose(CY.DCMC.L1,i)))],
+      ['→ active DCMC (µM)',...lv.map(i=>fmt(activeUM('DCMC',dose(CY.DCMC.L1,i))))],
+      ['TMZ ×1 (µM)',...lv.map(i=>fmt(dose(CY.TMZA.L1,i)))],
+      ['TMZ ×3, per dose (µM)',...lv.map(i=>fmt(dose(CY.TMZB.L1,i)))],
+      [`TMZ ×3 spike, 24 h (µM, ${SF1()}×)`,...lv.map(i=>fmt(SF1()*dose(CY.TMZB.L1,i)))],
+      [`TMZ ×3 spike, 48 h (µM, ${SF2()}×)`,...lv.map(i=>fmt(SF2()*dose(CY.TMZB.L1,i)))]]
+    :[SER()?['Added per well · µL',...lv.map(()=>16)]:st,
+      ['DCMC (µg/mL)',...lv.map(i=>fmt(dose(CY.DCMC.L1,i)))],
+      ['→ active DCMC (µM)',...lv.map(i=>fmt(activeUM('DCMC',dose(CY.DCMC.L1,i))))],
+      ['DCOE (µg/mL)',...lv.map(i=>fmt(dose(CY.DCOE.L1,i)))],
+      ['→ active DCMC (µM)',...lv.map(i=>fmt(activeUM('DCOE',dose(CY.DCOE.L1,i))))],
+      ['Cisplatin (µM)',...lv.map(i=>fmt(dose(CY.CIS.L1,i)))],
+      ...(SER()?[['DCMC tube (µg/mL)',...lv.map(i=>fmt(CY.DCMC.hi/Math.pow(2,8-i)))],['DCOE tube (µg/mL)',...lv.map(i=>fmt(CY.DCOE.hi/Math.pow(2,8-i)))],['Cisplatin tube (µM)',...lv.map(i=>fmt(CY.CIS.hi/Math.pow(2,8-i)))]]:[])];
+    table('ladder',['Level',...lv],rows);
+    document.getElementById('ladnote').textContent=isSF()
+      ?'Columns 4–11 are levels 1–8 (two-fold steps). Levels 1–4 use the low stock and levels 5–8 the high stock, 2–16 µL each; the low stock is the high stock diluted 1:16. Column 2 is untreated and column 3 is each row\'s vehicle. Concentrations are at the time of addition (180 µL at 0 h). TMZ ×3 rows get half the per-dose concentration of TMZ ×1 rows, so the two curves overlap in total TMZ added (×3 top: 3 × 256 = 768 µM) while DMSO stays under 1%.'
+      :SER()?`Columns 4–11 are levels 1–8 (two-fold steps). Each agent gets one 2-fold serial dilution starting from the same high stock (S8 is the high stock itself, S1 is high ÷ 128), and every well receives 16 µL from the tube for its level, so the final concentrations are unchanged. Column 2 is untreated and column 3 is each row's vehicle (16 µL of the top-dose vehicle stock). Active DCMC = weighed material × ${PUR.DCMC} (DCMC) or × ${PUR.DCOE} (DCOE), MW ${MW}.`:`Columns 4–11 are levels 1–8 (two-fold steps). Levels 1–4 use the low stock and levels 5–8 the high stock, 2–16 µL each; the low stock is the high stock diluted 1:16. Column 2 is untreated and column 3 is each row's vehicle. Active DCMC = weighed material × ${PUR.DCMC} (DCMC) or × ${PUR.DCOE} (DCOE), MW ${MW}.`;
+  }
+}
+function medgrid(){
+  if(plate==='combo'){
+    const p=P(), cols=[2,3,4,5,6,7,8,9,10,11], ag=AG(), pl=isSF()?'T':'C', pn=isSF()?'TMZ':'Cis';
+    const head=[`Row (level · ${ag} µg/mL)`,...cols.map(c=>c===2?`2 · ${ag} alone`:c<=8?`${c} · ${pl} ${fmt(dose(p.Lc,c-2))}`:{9:`9 · ${pn} alone`,10:'10 · Veh',11:'11 · Veh/Untr'}[c])];
+    const rows=[...'BCDEFGH'].map(r=>{const lv=ROWS.indexOf(r);
+      return [r==='H'?'H · edge':`${r} · L${lv} · ${fmt(dose(p.Lag,lv))}`,...cols.map(c=>{const w=well(r,c);return w.t==='blank'?V0():w.med})]});
+    table('medgrid',head,rows);
+    document.getElementById('mednote').textContent=`Medium = ${V0()} − ${ag} stock − ${PN()} stock. Vehicle wells get 128 µL vehicle medium + ${V0()-128} µL medium, matching well G8; blank wells (H2–H8) already hold 50 µL medium from day 0. Column 9 (${PN()} alone) runs at the row's level. All other edge wells: 200 µL PBS.`;
+  }else{
+    const cols=[2,3,4,5,6,7,8,9,10,11];
+    const head=['Row · agent',SER()?'2 · Controls':'2 · Untr','3 · Veh',...cols.slice(2).map(c=>`${c} · L${c-3}`)];
+    const rmap=isSF()?CYROW_SF:CYROW;
+    const rows=[...(SER()?'BCDEFG':'BCDEFGH')].map(r=>[r==='H'?'H · edge':`${r} · ${AGN[rmap[r]]}`,...cols.map(c=>{const w=well(r,c);return w.t==='blank'?V0():w.med})]);
+    table('medgrid',head,rows);
+    document.getElementById('mednote').textContent=`Medium = ${V0()} − stock volume${SER()?' (always 16 µL, taken from the row\'s serial tube)':''}. Vehicle wells (column 3) get 16 µL of that row's vehicle stock + ${V0()-16} µL medium,`+(SER()?' matching the row\'s top dose (column 11). Positive-control wells B2 and C2 get 16 µL of the 2 mM cisplatin master + 134 µL medium. Blank wells (F2, G2) hold no cells, only the 50 µL medium from day 0. Row H is all PBS.':' matching the row\'s top dose (column 11). Blank wells (H2–H8) already hold 50 µL medium from day 0.')+' All other edge wells: 200 µL PBS.';
+  }
+  hl('medgrid');
+}
+function hl(id){[...document.querySelectorAll('#'+id+' tbody tr')].forEach((tr,i)=>{const r='BCDEFGH'[i];
+  [...tr.children].slice(1).forEach((td,j)=>{if(r+(j+2)===sel)td.classList.add('hl')})})}
+function spikegrid(){
+  if(!isSF()) return;
+  const cols=[2,3,4,5,6,7,8,9,10,11];
+  const rows=[...'BCDEFGH'].map(r=>[r,...cols.map(c=>{const s=well(r,c).sp;return s==='M'?'M':s==='V'?'V':`T${s.slice(1)}`})]);
+  table('spikegrid',['Row',...cols.map(String)],rows);
+  hl('spikegrid');
+  const any=rows.some(r=>r.some(x=>typeof x==='string'&&x[0]==='T'&&x.length>1));
+  document.getElementById('spikenote').textContent=(any
+    ?`T1–T8 = TMZ spike tube for that dose level (${SF1()}× the per-dose concentration at 24 h into 180 µL, ${SF2()}× at 48 h into 190 µL, so each spike restores the per-dose concentration in the growing volume). V = vehicle spike, M = plain medium. `
+    :'This plate gets no TMZ after 0 h, but every well still gets 10 µL plain medium (M) at 24 h and 48 h so its volume, DCMC dilution and handling match the three-dose plate. ')+
+    'Lay the spikes out in a sterile V-bottom plate in this pattern and transfer 10 µL with a multichannel pipette. Make a fresh spike plate each day.';
+}
+function sched(){
+  if(!isSF()) return;
+  const t=document.getElementById('sched');
+  t.innerHTML=`<thead><tr><th>Time</th><th>All plates</th><th>TMZ ×1 plates</th><th>TMZ ×3 plates</th></tr></thead><tbody>
+  <tr><td>Day 0 (−24 h)</td><td>Seed 3,000 SF-268 cells in 50 µL per well; 50 µL medium in blanks; 200 µL PBS in edge wells.</td><td></td><td></td></tr>
+  <tr><td>0 h</td><td>Add 130 µL medium + stocks per the medium grid (well now 180 µL). DCMC goes in now and is not re-added.</td><td>TMZ dose 1</td><td>TMZ dose 1</td></tr>
+  <tr><td>24 h</td><td>10 µL per well from a fresh spike plate (well now 190 µL).</td><td>10 µL medium everywhere</td><td>TMZ dose 2 (${SF1()}× spikes); vehicle spikes in vehicle wells; medium elsewhere</td></tr>
+  <tr><td>48 h</td><td>10 µL per well from a fresh spike plate (well now 200 µL, the maximum).</td><td>10 µL medium everywhere</td><td>TMZ dose 3 (${SF2()}× spikes); vehicle spikes in vehicle wells; medium elsewhere</td></tr>
+  <tr><td>72 h</td><td>Add 20 µL WST-1 (1/10 volume), incubate 1–2 h, read 440 nm (reference 650 nm).</td><td></td><td></td></tr></tbody>`;
+}
+function cards(){
+  const L=LINES[line], el=document.getElementById('cards');
+  const nCell=SER()?58:63, plates=3;
+  const cells=`<div class="card"><div class="k">Cells</div><div class="v">${L.density}</div>
+    <p>${L.cells.toLocaleString()} cells in 50 µL per well. ${nCell} wells per plate get cells; prepare ${SER()?10:11} mL for 3 plates (${SER()?'1.0 × 10⁶':L.total} cells in total)${isSF()&&plate==='combo'?'. Seed the TMZ ×1 and TMZ ×3 plates from the same suspension (22 mL for 6 plates)':''}.</p>
+    <p class="muted">Blank wells${SER()?' (F2, G2)':''}: 50 µL medium on day 0, ${V0()} µL at 0 h${isSF()?', then the two 10 µL spikes':''}.</p></div>`;
+  const cisMaster='Master (2 mM): dilute the commercial cisplatin solution (Cisplatine Viatris, 1 mg/mL = 3.33 mM, in 0.9% NaCl) with sterile 0.9% NaCl, 600 µL + 400 µL per mL (for example 6 mL + 4 mL for 10 mL). Protect from light and make it fresh on the day. Use saline, not water or DMSO: chloride keeps cisplatin from converting to its aquated form, and DMSO inactivates it.';
+  const tmzMaster='Master: 19.4 mg TMZ in 1 mL anhydrous DMSO (100 mM); warm to 37 °C for a few minutes if needed. Aliquot, store at −20 °C protected from light, use each aliquot once. TMZ breaks down within hours at pH 7.4, so dilute into medium only immediately before adding it to cells.';
+  if(isSF()&&plate==='combo'){
+    const p=P(), top=32*p.Lc, F=p.F, g0=p.dmsoG8+0.032*p.Lc;
+    const vehD=g0*VW()/128*40;
+    let h=`
+    <div class="card TMZ"><div class="k">TMZ working stock (0 h)</div><div class="v">${fmt(F*p.Lc)} µM</div>
+      <p>Make 4 mL: <b>${fmt(p.tmzMaster)} µL</b> of 100 mM master + <b>${fmt(4000-p.tmzMaster)} µL</b> medium, just before dosing (${fmt(p.tmzMaster/40)}% DMSO).</p>
+      <p class="muted">${F}× the lowest dose, so 2 µL in the 180 µL well gives level 1. ${tmzMaster}</p></div>
+    <div class="card DCMC"><div class="k">DCMC working stock (0 h)</div><div class="v">${fmt(F*p.Lag)} µg/mL</div>
+      <p>Make 4 mL: <b>${fmt(p.agMaster)} µL</b> of 20 mg/mL DCMC master + <b>${fmt(4000-p.agMaster)} µL</b> warm medium, added dropwise while vortexing (${fmt(p.agMaster/40)}% DMSO).</p>
+      <p class="muted">${F}× the lowest dose. Master: 20 mg DCMC (92% pure, weighed as is) in 1 mL DMSO. Equals ${fmt(F*p.Lag*PUR.DCMC)} µg/mL active DCMC in the working stock.</p></div>
+    <div class="card"><div class="k">Vehicle medium (0 h)</div><div class="v">${fmt(vehD/40)}% DMSO</div>
+      <p>Make 4 mL: <b>${fmt(vehD)} µL</b> DMSO + <b>${fmt(4000-vehD)} µL</b> medium. Add 128 µL + ${V0()-128} µL medium per vehicle well.</p>
+      <p class="muted">This matches well G8, the highest-dose well: ${fmt(g0)}% DMSO at 0 h from the two stocks.</p></div>`;
+    if(prot==='B'){
+      const s1=spikeTop(top,SF1(),600), s2=spikeTop(top,SF2(),600);
+      const g8=(VW()*g0/100+10*s1.pct/100+10*s2.pct/100)/VEND*100;
+      h+=`<div class="card TMZ"><div class="k">TMZ spike tubes (24 h and 48 h)</div><div class="v">6 levels, fresh each day</div>
+        <p>24 h top (level 6, ${fmt(s1.c)} µM): <b>${fmt(s1.m)} µL</b> master + <b>${fmt(s1.med)} µL</b> medium.</p>
+        <p>48 h top (level 6, ${fmt(s2.c)} µM): <b>${fmt(s2.m)} µL</b> master + <b>${fmt(s2.med)} µL</b> medium.</p>
+        <p>Then serially dilute 300 µL into 300 µL medium five times for levels 5 → 1. Each level feeds 7 wells × 3 plates.</p>
+        <p class="muted">Highest-dose well (G8) ends at ${fmt(g8)}% DMSO after the third dose.</p></div>
+      <div class="card"><div class="k">Vehicle spike (24 h and 48 h)</div><div class="v">${fmt(s1.pct)}% / ${fmt(s2.pct)}% DMSO</div>
+        <p>24 h: <b>${fmt(s1.m/2)} µL</b> DMSO + <b>${fmt(300-s1.m/2)} µL</b> medium.<br>48 h: <b>${fmt(s2.m/2)} µL</b> DMSO + <b>${fmt(300-s2.m/2)} µL</b> medium.</p>
+        <p class="muted">10 µL into each vehicle well (column 10 and B11), matching the DMSO the level-6 spike adds to G8.</p></div>`;
+    }else{
+      h+=`<div class="card"><div class="k">Spikes (24 h and 48 h)</div><div class="v">plain medium</div>
+        <p>10 µL medium into every well, including blanks, at 24 h and 48 h (180 → 190 → 200 µL). Prepare 2 mL per plate per day.</p>
+        <p class="muted">Keeps volume, DCMC dilution and handling identical to the TMZ ×3 plates.</p></div>`;
+    }
+    el.innerHTML=h+cells; return;
+  }
+  if(isSF()){
+    const st=(ag,mast)=>{const hi=cyHi(ag),m=cyM(ag),lo=hi/16,u=CY[ag].u;return `<p>High ${fmt(hi)} ${u}: <b>${fmt(m)} µL</b> ${mast} + <b>${fmt(1000-m)} µL</b> medium (1 mL).</p>
+      <p>Low ${fmt(lo)} ${u}: <b>62.5 µL</b> high stock + <b>937.5 µL</b> medium.</p>`};
+    const topB=dose(CY.TMZB.L1,8), s1=spikeTop(topB,SF1(),400), s2=spikeTop(topB,SF2(),400);
+    const topPct=ag=>16*cyM(ag)/10/VW();                          // % DMSO in the top well at 0 h
+    const endPct=ag=>topPct(ag)*VW()/VEND;                        // after two plain-medium spikes
+    const endB=(VW()*topPct('TMZB')/100+10*s1.pct/100+10*s2.pct/100)/VEND*100;
+    el.innerHTML=`
+    <div class="card DCMC"><div class="k">DCMC stocks</div><div class="v">20 mg/mL in DMSO</div>${st('DCMC','master')}
+      <p class="muted">Master: 20 mg DCMC (92% pure, weighed as is) in 1 mL DMSO. High stock carries ${fmt(cyM('DCMC')/10)}% DMSO; the top well ${fmt(topPct('DCMC'))}% (${fmt(endPct('DCMC'))}% after the spikes).</p></div>
+    <div class="card TMZ"><div class="k">TMZ ×1 stocks (0 h)</div><div class="v">100 mM in DMSO</div>${st('TMZA','100 mM master')}
+      <p class="muted">${tmzMaster} High stock carries ${fmt(cyM('TMZA')/10)}% DMSO; the top well ${fmt(topPct('TMZA'))}% (${fmt(endPct('TMZA'))}% after the medium spikes).</p></div>
+    <div class="card TMZ"><div class="k">TMZ ×3 stocks</div><div class="v">0 h, then spikes</div>${st('TMZB','100 mM master')}
+      <p>24 h spike top (level 8, ${fmt(s1.c)} µM): <b>${fmt(s1.m)} µL</b> master + <b>${fmt(s1.med)} µL</b> medium. 48 h top (${fmt(s2.c)} µM): <b>${fmt(s2.m)} µL</b> + <b>${fmt(s2.med)} µL</b>. Serially dilute 200 µL into 200 µL medium seven times for levels 7 → 1.</p>
+      <p class="muted">Top well ends at ${fmt(endB)}% DMSO after the third dose.</p></div>
+    <div class="card"><div class="k">Vehicle stocks</div><div class="v">matched to each row</div>
+      <p>0 h, 1 mL each. DCMC rows: <b>${fmt(cyM('DCMC'))} µL</b> DMSO + ${fmt(1000-cyM('DCMC'))} µL medium. TMZ ×1 rows: <b>${fmt(cyM('TMZA'))} µL</b> DMSO + ${fmt(1000-cyM('TMZA'))} µL. TMZ ×3 rows: <b>${fmt(cyM('TMZB'))} µL</b> DMSO + ${fmt(1000-cyM('TMZB'))} µL. 16 µL + ${V0()-16} µL medium per vehicle well.</p>
+      <p>Vehicle spikes for F3/G3 (200 µL): <b>${fmt(s1.m/2)} µL</b> DMSO + ${fmt(200-s1.m/2)} µL medium at 24 h; <b>${fmt(s2.m/2)} µL</b> + ${fmt(200-s2.m/2)} µL at 48 h.</p></div>`+cells;
+    return;
+  }
+  if(plate==='combo'){
+    const p=P(), ag=agent;
+    el.innerHTML=`
+    <div class="card CIS"><div class="k">Cisplatin working stock</div><div class="v">${fmt(100*p.Lc)} µM</div>
+      <p>Make 4 mL: <b>${fmt(p.cisMaster)} µL</b> of 2 mM master + <b>${fmt(4000-p.cisMaster)} µL</b> medium.</p>
+      <p class="muted">${cisMaster}</p></div>
+    <div class="card ${ag}"><div class="k">${ag} working stock</div><div class="v">${fmt(100*p.Lag)} µg/mL</div>
+      <p>Make 4 mL: <b>${fmt(p.agMaster)} µL</b> of 20 mg/mL ${ag} master + <b>${fmt(4000-p.agMaster)} µL</b> warm medium, added dropwise while vortexing (${fmt(p.agMaster/40)}% DMSO).</p>
+      <p class="muted">Master: 20 mg ${ag} (weighed as is; ${ag==='DCMC'?'92% pure':'62% DCMC'}) in 1 mL DMSO. Equals ${fmt(100*p.Lag*PUR[ag])} µg/mL active DCMC in the working stock.</p></div>
+    <div class="card"><div class="k">Vehicle medium</div><div class="v">${fmt(0.25*p.Lag)}% DMSO · ${fmt(2.5*p.Lc)}% saline</div>
+      <p>Make 4 mL: <b>${fmt(10*p.Lag)} µL</b> DMSO + <b>${fmt(100*p.Lc)} µL</b> 0.9% NaCl + <b>${fmt(4000-10*p.Lag-100*p.Lc)} µL</b> medium. Add 128 µL + 22 µL medium per vehicle well.</p>
+      <p class="muted">This matches well G8, the highest-dose well: ${fmt(p.dmsoG8)}% DMSO and ${fmt(p.salG8)}% (v/v) saline carried in from the two stocks.</p></div>`+cells;
+  }else{
+    const st=(ag)=>{const c=CY[ag],lo=c.hi/16;return `<p>High ${c.hi} ${c.u}: <b>${fmt(c.mUL)} µL</b> ${ag==='CIS'?'2 mM master':'master'} + <b>${fmt(1000-c.mUL)} µL</b> medium (1 mL).</p>
+      ${SER()?'':`<p>Low ${fmt(lo)} ${c.u}: <b>62.5 µL</b> high stock + <b>937.5 µL</b> medium.</p>`}`};
+    el.innerHTML=`
+    <div class="card DCMC"><div class="k">DCMC stocks</div><div class="v">20 mg/mL in DMSO</div>${st('DCMC')}
+      <p class="muted">Master: 20 mg DCMC (92% pure, weighed as is) in 1 mL DMSO. High stock carries 2% DMSO; the top well 0.16%.</p></div>
+    <div class="card DCOE"><div class="k">DCOE stocks</div><div class="v">20 mg/mL in DMSO</div>${st('DCOE')}
+      <p class="muted">Master: 20 mg oil (62% DCMC) in 1 mL DMSO. High stock carries 4% DMSO; the top well 0.32%.</p></div>
+    <div class="card CIS"><div class="k">Cisplatin stocks</div><div class="v">2 mM in 0.9% NaCl</div>${st('CIS')}
+      <p class="muted">${cisMaster}</p></div>
+    <div class="card"><div class="k">Vehicle stocks (1 mL each)</div><div class="v">matched to each high stock</div>
+      <p>DCMC rows: <b>20 µL</b> DMSO + 980 µL medium.<br>DCOE rows: <b>40 µL</b> DMSO + 960 µL medium.<br>Cisplatin rows: <b>${fmt(CY.CIS.mUL)} µL</b> 0.9% NaCl + ${fmt(1000-CY.CIS.mUL)} µL medium.</p>
+      <p class="muted">16 µL + 134 µL medium per vehicle well (column 3), matching the row's top dose.</p></div>`+(SER()?`
+    <div class="card"><div class="k">Serial dilution (per agent)</div><div class="v">8 tubes, 2-fold</div>
+      <p>Label tubes S1–S8 for each of DCMC, DCOE and cisplatin. Put <b>200 µL</b> medium in S1–S7 and <b>400 µL</b> of the high stock in S8.</p>
+      <p>Transfer <b>200 µL</b> S8 → S7 and mix (pipette up and down about 10×), then S7 → S6 with a fresh tip, and so on down to S1. S1 ends with 400 µL, the others with 200 µL.</p>
+      <p class="muted">Each tube is half the one above it, so S8 is the high stock and S1 is the high stock ÷ 128. Add 16 µL from tube Sn to every level-n well. One set of tubes serves all 3 plates (6 wells × 16 µL = 96 µL per tube).</p></div>
+    <div class="card CIS"><div class="k">Positive control (B2, C2)</div><div class="v">160 µM cisplatin</div>
+      <p>Add <b>16 µL</b> of the 2 mM cisplatin master + <b>134 µL</b> medium to each well. That is 2.5× the top dose and about 8× the IC50.</p>
+      <p class="muted">The master is 0.9% NaCl, so these wells carry 8% v/v saline. 6 wells × 16 µL = 96 µL of master across 3 plates, on top of the 200 µL used for the stock.</p></div>`:'')+cells;
+  }
+}
+function notes(){
+  const p=P(), n=[];
+  const edge='All drug-treated and vehicle wells sit in the inner 60 wells. The outer ring holds PBS, the 7 blanks (H2–H8) and 3 extra untreated wells (H9–H11). Use the 5 inner untreated wells (C11–G11) as the 100% reference; compare them with H9–H11 to see whether evaporation shifts the edge signal.';
+  if(isSF()&&plate==='combo'){
+    n.push(`TMZ is unstable at pH 7.4: its half-life at 37 °C is about 1.8 h, so a single dose is essentially gone within about 10 h. The TMZ ×1 plates give the cells one pulse; the TMZ ×3 plates give three pulses at the same per-dose concentration. Run both protocols in parallel from the same cell suspension and read all plates at 72 h, so the only difference is the number of TMZ doses.`);
+    n.push(`Each well holds 50 µL cells + 130 µL at 0 h (180 µL), then gets two 10 µL spikes, ending at 200 µL. DCMC is added once at 0 h in both protocols. Every well gets the same spikes, so the volume (180 → 200 µL) and the slight DCMC dilution (to 0.9× nominal by 72 h) are identical across protocols. Concentrations here are nominal at the time of addition.`);
+    n.push(`The dashed diagonal keeps a constant ratio (${fmt(p.Lag)} µg/mL DCMC : ${fmt(p.Lc)} µM TMZ) across all six levels for CompuSyn combination index values. The full 6 × 6 matrix also supports isobologram or Bliss/ZIP scoring. Here the TMZ range is set lower than the DCMC range (top ≈ 1× TMZ IC50 versus 4× for DCMC), because higher TMZ would push DMSO above 0.5% and is far above levels reached in patients' brains.`);
+    n.push('SF-268 has high MGMT, which repairs the O6-methylguanine lesions TMZ makes, so expect a shallow TMZ curve. The key read-out is whether DCMC lowers the TMZ dose needed. To show that MGMT drives the resistance, an optional extra plate can pre-treat with the MGMT inhibitor O6-benzylguanine (about 25 µM, 1 h before TMZ).');
+    n.push(`Enter your measured IC50s for DCMC (72 h), TMZ ×1 and TMZ ×3 from the cytotoxicity plate before making the combination stocks. Each protocol re-centres on its own TMZ IC50.`);
+    n.push(edge);
+  }else if(isSF()){
+    n.push('Run this plate first. Rows D–E (TMZ ×1) and F–G (TMZ ×3) sit on the same plate, so both protocols see the same cells, handling and read time. Every well gets 10 µL at 24 h and 48 h (TMZ, vehicle or plain medium, per the spike map), and all wells are read at 72 h.');
+    n.push('The DCMC IC50 of 4 µg/mL (SF-268, Taleb et al. 2016) is a 24 h value; at 72 h it may be lower. The ladder of 0.25–32 µg/mL covers either case.');
+    n.push('The published SF-268 TMZ IC50 of 147 µM comes from a 6-day assay. Over 72 h the single-dose curve may not reach 50% kill even at 512 µM because SF-268 has high MGMT. If so, report the % inhibition at the top dose and use the curve-fit estimate with caution.');
+    n.push('Each well holds 50 µL cells + 130 µL medium and stock at 0 h (180 µL), then gets two 10 µL spikes, ending at 200 µL. The stocks are 10% weaker than on the other cell lines\' plates (high stock = top dose × 11.25 instead of × 12.5) because they go into 180 µL instead of 200 µL.');
+    n.push('<span>The TMZ ×3 top well reaches about 0.73% DMSO after the third dose. Check that its vehicle (F3/G3) reads at least 90% of untreated; if not, drop the top level, or use a 150 mM TMZ master (29.1 mg/mL in warmed DMSO) to cut the DMSO by a third.</span>');
+    n.push('Fit a four-parameter logistic curve per row pair and plate, and report the mean of the three plates. For the TMZ ×3 rows, report both the per-dose IC50 and the cumulative TMZ added (3 × per-dose).');
+    n.push('Untreated column 2 (6 wells) is the 100% reference. Each vehicle well in column 3 should read within a few percent of it; H9–H11 check the edge for evaporation.');
+  }else if(plate==='combo'){
+    n.push(`Each grid is centred on the IC50s above, so both drugs reach about their IC50 at level 4. The dashed diagonal keeps that IC50-matched ratio (${fmt(p.Lag)} µg/mL ${agent} : ${fmt(p.Lc)} µM cisplatin) across all six levels, which is the constant-ratio series CompuSyn needs for combination index values. One step right of it is cisplatin-heavy (×2), one step left is ${agent}-heavy (×2), and the full 6 × 6 matrix also supports isobologram or Bliss/ZIP scoring.`);
+    n.push(line==='MDA'
+      ?'MDA-MB-231: DCMC is taken from Taleb et al. 2016, DCOE is inferred from its 62% DCMC content, and cisplatin is your earlier CompuSyn Dm. The DCMC and DCOE values are 24 h WST-1 results; if your 48 h curves come out lower, enter them and the grid re-centres.'
+      :'A431: neither paper tested A431, so all three IC50s here are stand-ins. Run the cytotoxicity plate first and enter the measured IC50s before preparing combination stocks. A431 is an epidermoid skin carcinoma line, which ties in with topical DCOE strongly suppressing DMBA/TPA skin papillomas in mice (Abu Zeinab et al. 2011).');
+    n.push(agent==='DCMC'
+      ?'DCMC doses are weighed material (92% pure). The inspector also shows active DCMC so the DCOE plate can be compared on the same basis.'
+      :'DCOE doses are weighed oil, of which 62% is DCMC. If DCOE reaches its IC50 at a lower active-DCMC concentration than pure DCMC does, other oil constituents contribute, which Abu Zeinab et al. proposed for the oil\'s minor sesquiterpenes. Run the DCMC and DCOE grids side by side on the same cell passage.');
+    if(p.salG8>5) n.push(`<span>Cisplatin's top well carries ${fmt(p.salG8)}% saline, which dilutes the medium noticeably. Check that the cells tolerate it, or lower the cisplatin IC50 entry.</span>`);
+    n.push(edge);
+  }else{
+    n.push('Run this plate first for each cell line; its IC50s centre the combination grids. Treat for 48 h and read with WST-1 at 440 nm, as in Taleb et al. 2016, which saw no difference between 24 and 48 h.');
+    n.push('The ladders span 128-fold: DCMC 0.25–32 µg/mL, DCOE 0.5–64 µg/mL (0.31–40 µg/mL active DCMC), cisplatin 0.5–64 µM. The published DCMC IC50s (4–13 µg/mL across five lines; 6 µg/mL in MDA-MB-231) fall at levels 5–7, leaving room on both sides for A431, which has no published value.');
+    n.push('Each agent runs in duplicate rows on every plate, across three independent plates. Fit a four-parameter logistic curve per plate and report the mean of the three IC50s. Report DCOE both as oil and as active DCMC, then enter the values in the IC50 panel under Combination.');
+    n.push('DCMC and DCOE are oils. Add the master to warm medium dropwise while vortexing, and check the high stock and the top wells for droplets under the microscope. If droplets appear, drop the top level rather than raising the DMSO.');
+    n.push('The abstract of Taleb et al. 2016 prints the IC50s in mg/ml; the methods and figures show they are µg/mL (13–4 µg/mL = 58–18 µM).');
+    if(SER()) n.push('MDA-MB-231 plates use a serial dilution of the high stock instead of per-well volumes, so every treated and vehicle well gets the same 16 µL and 134 µL medium. Errors carry down the series, so mix each tube well, change tips between steps, and dose within a few minutes of making the dilutions. Because the dilutions are made in medium, the DMSO (and the saline in the cisplatin stock) also falls at each step, so the low-dose wells carry less vehicle than the top-dose-matched vehicle wells. Those vehicle wells are the conservative control.');
+    n.push(SER()?'Column 2 holds the controls: B2 and C2 positive (160 µM cisplatin), D2 and E2 untreated cells (the 100% reference), F2 and G2 blank (no cells, medium only). Subtract the mean blank from every reading first. Each vehicle well in column 3 should read within a few percent of the untreated wells, and the positive control should read near zero; if it does not, check the cisplatin master. Row H is PBS (no cells), so this plate has no edge-evaporation check.':'Untreated column 2 (6 wells) is the 100% reference. Each vehicle well in column 3 should read within a few percent of it; H9–H11 check the edge for evaporation.');
+  }
+  document.getElementById('notes').innerHTML=n.map(x=>x.startsWith('<span>')?`<p class="warn">${x}</p>`:`<p>${x}</p>`).join('');
+}
+
+/* ---------- IC50 inputs ---------- */
+function icKeys(){return isSF()?['DCMC','TMZA','TMZB']:['DCMC','DCOE','CIS']}
+function icLabel(ag){return {DCMC:'DCMC',DCOE:'DCOE',CIS:'Cisplatin',TMZA:'TMZ ×1 (single dose)',TMZB:'TMZ ×3 (per dose)'}[ag]}
+function unit(ag){return ag==='DCMC'||ag==='DCOE'?'µg/mL':'µM'}
+function buildIC(){
+  const box=document.getElementById('ics'); box.innerHTML='';
+  for(const ag of icKeys()){
+    const id='ic-'+line+'-'+ag, s=SRC[line][ag];
+    const d=document.createElement('div'); d.className='ic';
+    d.innerHTML=`<label for="${id}">${icLabel(ag)} · ${LINES[line].name}</label>
+      <div class="row"><input id="${id}" type="number" inputmode="decimal" min="0.1" step="any" value="${IC[line][ag]}"><span class="u">${unit(ag)}</span><span class="chip" id="${id}-chip"></span></div>
+      <div class="src" id="${id}-src">${s[1]}</div>`;
+    box.appendChild(d);
+    const inp=d.querySelector('input');
+    inp.addEventListener('input',()=>{const v=parseFloat(inp.value);if(v>0){IC[line][ag]=v;saveIC();chips();render()}});
+  }
+  chips();
+}
+function chips(){
+  for(const ag of icKeys()){
+    const id='ic-'+line+'-'+ag, ch=document.getElementById(id+'-chip'); if(!ch) continue;
+    const edited=IC[line][ag]!==DEF[line][ag], s=SRC[line][ag];
+    ch.className='chip'+(edited?' edited':(s[0]==='estimate'||s[0]==='placeholder'||s[0]==='inferred')?' est':'');
+    ch.textContent=edited?'your value':s[0];
+    document.getElementById(id+'-src').textContent=edited?`Estimate was ${DEF[line][ag]} ${unit(ag)}. ${s[1]}`:s[1];
+  }
+}
+function icNote(){
+  document.getElementById('ic-title').textContent=plate==='combo'?'IC50s used to centre the grid':'IC50 estimates (used for × IC50 in the inspector)';
+  document.getElementById('ic-note').textContent=isSF()
+    ?'DCMC IC50 is in µg/mL of material as weighed (92% pure). TMZ IC50s are in µM per dose; each TMZ protocol has its own value. Typing a measured value re-centres the combination grid, its stocks, spikes and vehicle at once. Values are remembered in this browser only.'
+    :'DCMC and DCOE IC50s are in µg/mL of material as weighed (DCMC 92% pure; DCOE 62% DCMC). Typing a measured value re-centres the combination grid, its stocks and its vehicle at once. Values are remembered in this browser only.';
+}
+document.getElementById('ic-reset').onclick=()=>{IC[line]={...DEF[line]};saveIC();buildIC();render()};
+
+/* ---------- toggles ---------- */
+function setPressed(on,off){document.getElementById(on).setAttribute('aria-pressed','true');off.forEach(o=>document.getElementById(o).setAttribute('aria-pressed','false'))}
+document.getElementById('b-cyto').onclick=()=>{plate='cyto';sel='E8';setPressed('b-cyto',['b-combo']);render()};
+document.getElementById('b-combo').onclick=()=>{plate='combo';sel='E6';setPressed('b-combo',['b-cyto']);render()};
+document.getElementById('b-mda').onclick=()=>{line='MDA';setPressed('b-mda',['b-a431','b-sf']);buildIC();render()};
+document.getElementById('b-a431').onclick=()=>{line='A431';setPressed('b-a431',['b-mda','b-sf']);buildIC();render()};
+document.getElementById('b-sf').onclick=()=>{line='SF268';setPressed('b-sf',['b-mda','b-a431']);buildIC();render()};
+document.getElementById('b-dcmc').onclick=()=>{agent='DCMC';setPressed('b-dcmc',['b-dcoe']);render()};
+document.getElementById('b-dcoe').onclick=()=>{agent='DCOE';setPressed('b-dcoe',['b-dcmc']);render()};
+document.getElementById('b-pa').onclick=()=>{prot='A';setPressed('b-pa',['b-pb']);render()};
+document.getElementById('b-pb').onclick=()=>{prot='B';setPressed('b-pb',['b-pa']);render()};
+document.getElementById('b-ul').onclick=()=>{mode='ul';setPressed('b-ul',['b-um']);render()};
+document.getElementById('b-um').onclick=()=>{mode='um';setPressed('b-um',['b-ul']);render()};
+buildIC();render();
+</script>
+
+</body></html>
